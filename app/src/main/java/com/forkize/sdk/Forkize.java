@@ -34,10 +34,12 @@ package com.forkize.sdk;
         import java.net.URI;
         import java.net.URL;
         import java.util.Locale;
+        import java.util.concurrent.ExecutionException;
 
 public class Forkize {
 
     private JSONObject object;
+    private JSONObject responseJSON;
     private Context context;
     private double latitude, longitude;
 
@@ -120,30 +122,31 @@ public class Forkize {
 
     }
     public void init(String token){}
-    public void post(){
+    public void post() throws ExecutionException, InterruptedException {
 
-        new Request().execute();
+        responseJSON = new Request().execute().get();
     }
 
     public String getString() {
-        StringBuffer string = new StringBuffer();
         try {
-            string.append("\nmanufacturer").append(object.getString("manufacturer"));
-            string.append("\nmodel").append(object.getString("model"));
-            string.append("\nlocale ").append(object.getString("locale"));
-            string.append("\ntype").append(object.getString("connectivity_type"));
-
-        } catch (JSONException e) {
+            this.post();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        String string = responseJSON.toString();
+
         return String.valueOf(string);
     }
 
-    private class Request extends AsyncTask<String, String, String>{
+    private class Request extends AsyncTask<String, String, JSONObject>{
 
         @Override
-        protected String doInBackground(String... params) {
+        protected JSONObject doInBackground(String... params) {
             InputStream inputStream = null;
+
+            JSONObject returnval = new JSONObject();
 
             try {
                 HttpClient httpClient = new DefaultHttpClient();
@@ -151,21 +154,33 @@ public class Forkize {
 
                 StringEntity stringEntity = new StringEntity(object.toString());
                 stringEntity.setContentType(new BasicHeader(HTTP.CONTENT_TYPE, "application/json"));
+
                 httpPost.setEntity(stringEntity);
 
                 HttpResponse httpResponse = httpClient.execute(httpPost);
                 inputStream = httpResponse.getEntity().getContent();
 
-                if(inputStream == null){
-                    System.out.print("Didn't work");
-                }
-
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            return inputStream != null ? inputStream.toString() : "Cheghav";
 
+            if (inputStream != null){
+                try {
+                    returnval.getJSONObject(inputStream.toString());
+                    return returnval;
 
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    returnval.put("status", "fail");
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            return returnval;
         }
     }
 }

@@ -4,6 +4,7 @@ import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -15,7 +16,9 @@ public class MainActivity extends ActionBarActivity {
 
         Forkize forkize = new Forkize(getApplicationContext());
         forkize.init();
-        forkize.post();
+
+        TextView tv = (TextView)findViewById(R.id.tv);
+        tv.setText(forkize.getString());
     }
 
     @Override
